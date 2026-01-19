@@ -1,5 +1,13 @@
+/// Registration Screen
+///
+/// Allows new users to create an account with email/password.
+/// Includes form validation and error handling.
+///
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import '../../data/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/primary_button.dart';
@@ -15,6 +23,90 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool agreeToTerms = false;
+  bool _isLoading = false;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final AuthService _authService = AuthService();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    // Validation
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
+
+    if (!_emailController.text.contains('@')) {
+      _showError('Please enter a valid email address');
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showError('Passwords do not match');
+      return;
+    }
+
+    if (!agreeToTerms) {
+      _showError('Please accept Terms & Conditions');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.registerWithEmail(
+        email: _emailController.text,
+        password: _passwordController.text,
+        name: _nameController.text,
+      );
+
+      // Check if widget is still mounted
+      if (!mounted) return;
+
+      // Success - navigate to home
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const BottomNav()),
+      );
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Image.asset('assets/logo.png', height: 120),
               const SizedBox(height: 10),
 
-              /// Title & Subtitle (same as login)
+              /// Title & Subtitle
               const Text(
                 "Create Account",
                 style: TextStyle(
@@ -52,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 32),
 
-              /// Form Card (same border fix)
+              /// Form Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -77,6 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     /// Name Field
                     AppTextField(
                       hint: "Name",
+                      controller: _nameController,
                       prefixIcon: const Icon(
                         Icons.person_outline,
                         color: AppColors.textLight,
@@ -88,17 +181,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     /// Email Field
                     AppTextField(
                       hint: "Email",
+                      controller: _emailController,
                       prefixIcon: const Icon(
                         Icons.email_outlined,
                         color: AppColors.textLight,
                       ),
                       fillColor: Colors.white,
+                      keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 14),
 
                     /// Password Field
                     AppTextField(
                       hint: "Password (At least 6 characters)",
+                      controller: _passwordController,
                       isPassword: true,
                       prefixIcon: const Icon(
                         Icons.lock_outlined,
@@ -111,6 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     /// Confirm Password Field
                     AppTextField(
                       hint: "Confirm Password",
+                      controller: _confirmPasswordController,
                       isPassword: true,
                       prefixIcon: const Icon(
                         Icons.lock_outline,
@@ -121,7 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 16),
 
-                    /// Terms & Conditions Row (FIXED recognizer)
+                    /// Terms & Conditions Row
                     Row(
                       children: [
                         Checkbox(
@@ -131,7 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           side: const BorderSide(
                             color: AppColors.primary,
                             width: 2,
-                          ), // FIXED
+                          ),
                           onChanged: (value) {
                             setState(() {
                               agreeToTerms = value ?? false;
@@ -156,19 +253,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     decoration: TextDecoration.underline,
                                     decorationColor: AppColors.primary,
                                   ),
-                                  recognizer:
-                                      TapGestureRecognizer() // FIXED: Attached & imported
-                                        ..onTap = () {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'Terms & Conditions opening...',
-                                              ),
-                                            ),
-                                          );
-                                        },
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Terms & Conditions opening...',
+                                          ),
+                                        ),
+                                      );
+                                    },
                                 ),
                               ],
                             ),
@@ -181,26 +277,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     /// Create Account Button
                     PrimaryButton(
-                      text: "Create Account",
-                      onTap: agreeToTerms
-                          ? () {
-                              // TODO: Register logic
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const BottomNav(),
-                                ),
-                              );
-                            }
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    "Please accept Terms & Conditions",
-                                  ),
-                                ),
-                              );
-                            },
+                      text: _isLoading
+                          ? "Creating Account..."
+                          : "Create Account",
+                      onTap: _isLoading ? null : _register,
                     ),
                   ],
                 ),

@@ -35,7 +35,7 @@ class _BottomNavState extends ConsumerState<BottomNav> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         elevation: 8,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),

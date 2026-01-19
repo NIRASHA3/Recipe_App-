@@ -10,6 +10,7 @@ class AppTextField extends StatelessWidget {
   final TextEditingController? controller;
   final VoidCallback? onTap;
   final String? Function(String?)? validator; // Added for form validation
+  final TextInputType? keyboardType; 
 
   const AppTextField({
     super.key,
@@ -20,6 +21,7 @@ class AppTextField extends StatelessWidget {
     this.controller,
     this.onTap,
     this.validator,
+    this.keyboardType,
   });
 
   @override
@@ -29,6 +31,7 @@ class AppTextField extends StatelessWidget {
       obscureText: isPassword,
       onTap: onTap,
       validator: validator,
+      keyboardType: keyboardType,
       style: const TextStyle(color: AppColors.textDark, fontSize: 16),
       decoration: InputDecoration(
         hintText: hint,

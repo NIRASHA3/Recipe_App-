@@ -1,15 +1,41 @@
+/// Shopping List Screen
+///
+/// Displays and manages the user's shopping list with features:
+/// - Group items by category
+/// - Mark items as purchased
+/// - Edit item quantities using text input
+/// - Remove items
+/// - Clear purchased items
+///
+library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
-import '../../data/providers/recipe_provider.dart';
+import '../../core/widgets/custom_app_bar.dart';
+import '../../data/providers/shopping_list_provider.dart';
+import '../../domain/models/shopping_item.dart';
 
 class ShoppingListScreen extends ConsumerWidget {
   const ShoppingListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shoppingItems = ref.watch(shoppingListProvider);
+    final shoppingItemsAsync = ref.watch(shoppingListProvider);
 
+    return shoppingItemsAsync.when(
+      data: (shoppingItems) => _buildShoppingList(context, ref, shoppingItems),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stack) =>
+          Scaffold(body: Center(child: Text('Error: $error'))),
+    );
+  }
+
+  Widget _buildShoppingList(
+    BuildContext context,
+    WidgetRef ref,
+    List<ShoppingItem> shoppingItems,
+  ) {
     // Group items by category
     final groupedItems = <String, List<ShoppingItem>>{};
     for (var item in shoppingItems) {
@@ -24,23 +50,15 @@ class ShoppingListScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Shopping List',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        elevation: 4,
+      appBar: CustomAppBar(
+        title: 'Shopping List',
+        automaticallyImplyLeading: false,
         actions: [
           if (purchasedCount > 0)
             PopupMenuButton(
               onSelected: (value) {
                 if (value == 'clear') {
-                  ref.read(shoppingListProvider.notifier).clearPurchased();
+                  ref.read(shoppingListActionsProvider).clearPurchased();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('✓ Purchased items cleared'),
@@ -324,15 +342,11 @@ class _ShoppingItemTile extends ConsumerStatefulWidget {
 }
 
 class _ShoppingItemTileState extends ConsumerState<_ShoppingItemTile> {
-  late double _quantity;
-
-  @override
-  void initState() {
-    super.initState();
-    _quantity = widget.item.quantity;
-  }
-
   void _showEditDialog(BuildContext context) {
+    final TextEditingController quantityController = TextEditingController(
+      text: widget.item.quantity.toString(),
+    );
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -351,68 +365,38 @@ class _ShoppingItemTileState extends ConsumerState<_ShoppingItemTile> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
+                      color: Color.fromARGB(255, 221, 221, 221),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    'Quantity:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textLight,
-                      fontWeight: FontWeight.w600,
+                  TextFormField(
+                    controller: quantityController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Quantity',
+                      labelStyle: TextStyle(
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w600,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            if (_quantity > 0.5) _quantity -= 0.5;
-                          });
-                        },
-                        icon: const Icon(Icons.remove_circle_outline),
-                        color: AppColors.primary,
-                        iconSize: 28,
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _quantity.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _quantity += 0.5;
-                          });
-                        },
-                        icon: const Icon(Icons.add_circle_outline),
-                        color: AppColors.primary,
-                        iconSize: 28,
-                      ),
-                    ],
+                    style: TextStyle(fontSize: 16, color: Colors.grey[500]),
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    '${widget.item.name}: $_quantity ${widget.item.unit}',
-                    style: const TextStyle(
+                    widget.item.unit,
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textDark,
+                      color: Colors.grey[500],
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -421,25 +405,46 @@ class _ShoppingItemTileState extends ConsumerState<_ShoppingItemTile> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          quantityController.dispose();
+                          Navigator.pop(context);
+                        },
                         child: const Text('Cancel'),
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          // Update item quantity in the provider
-                          ref
-                              .read(shoppingListProvider.notifier)
-                              .updateItem(widget.item.id, _quantity);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Updated ${widget.item.name} to $_quantity ${widget.item.unit}',
-                              ),
-                              backgroundColor: AppColors.success,
-                              duration: const Duration(seconds: 1),
-                            ),
+                        onPressed: () async {
+                          final quantity = int.tryParse(
+                            quantityController.text,
                           );
+                          if (quantity != null && quantity > 0) {
+                            // Update item quantity in the provider
+                            await ref
+                                .read(shoppingListActionsProvider)
+                                .updateItem(
+                                  widget.item.copyWith(quantity: quantity),
+                                );
+                            quantityController.dispose();
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Updated ${widget.item.name} to $quantity ${widget.item.unit}',
+                                  ),
+                                  backgroundColor: AppColors.success,
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a valid quantity'),
+                                backgroundColor: Colors.red,
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -478,7 +483,7 @@ class _ShoppingItemTileState extends ConsumerState<_ShoppingItemTile> {
         child: const Icon(Icons.delete, color: Colors.white, size: 28),
       ),
       onDismissed: (direction) {
-        ref.read(shoppingListProvider.notifier).removeItem(widget.item.id);
+        ref.read(shoppingListActionsProvider).removeItem(widget.item.id);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${widget.item.name} removed from shopping list'),
@@ -498,8 +503,8 @@ class _ShoppingItemTileState extends ConsumerState<_ShoppingItemTile> {
           value: widget.item.isPurchased,
           onChanged: (value) {
             ref
-                .read(shoppingListProvider.notifier)
-                .togglePurchased(widget.item.id);
+                .read(shoppingListActionsProvider)
+                .togglePurchased(widget.item.id, widget.item.isPurchased);
           },
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,7 +550,7 @@ class _ShoppingItemTileState extends ConsumerState<_ShoppingItemTile> {
                 iconSize: 20,
                 onPressed: () {
                   ref
-                      .read(shoppingListProvider.notifier)
+                      .read(shoppingListActionsProvider)
                       .removeItem(widget.item.id);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

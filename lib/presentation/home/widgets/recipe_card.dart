@@ -1,7 +1,8 @@
 // lib/presentation/home/widgets/recipe_card.dart
 import 'package:flutter/material.dart';
-import '../../../../domain/models/recipe.dart'; // Adjusted to domain/models/recipe.dart
-import '../../../../core/theme/app_colors.dart'; // Adjusted to core/theme/app_colors.dart
+import '../../../../domain/models/recipe.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/network_image_widget.dart';
 
 class RecipeCard extends StatelessWidget {
   final Recipe recipe;
@@ -43,32 +44,9 @@ class RecipeCard extends StatelessWidget {
                     ),
                     child:
                         recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                        ? Image.network(
-                            recipe.imageUrl!,
+                        ? SimpleNetworkImage(
+                            imageUrl: recipe.imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: Icon(
-                                  Icons.restaurant_menu_outlined,
-                                  size: 50,
-                                  color: Colors.grey[600],
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value:
-                                      loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  color: AppColors.primary,
-                                ),
-                              );
-                            },
                           )
                         : Icon(
                             Icons.restaurant_menu_outlined,

@@ -2,34 +2,76 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../home/recipe_detail_screen.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/custom_app_bar.dart';
+import '../../domain/models/recipe.dart';
 import '../../data/providers/recipe_provider.dart';
+import '../../data/providers/favorites_provider.dart';
 
 class FavoritesScreen extends ConsumerWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allRecipes = ref.watch(recipesProvider);
-    final favoriteIds = ref.watch(favoritesProvider);
+    final allRecipesAsync = ref.watch(recipesProvider);
+    final favoriteIdsAsync = ref.watch(favoritesProvider);
 
-    // Filter recipes that are in favorites
-    final favoriteRecipes = allRecipes
+    return allRecipesAsync.when(
+      data: (recipes) {
+        return favoriteIdsAsync.when(
+          data: (favoriteIds) =>
+              _buildFavoritesList(context, ref, recipes, favoriteIds),
+          loading: () => Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: const CustomAppBar(
+              title: 'Favorites',
+              automaticallyImplyLeading: false,
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, stack) => Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: const CustomAppBar(
+              title: 'Favorites',
+              automaticallyImplyLeading: false,
+            ),
+            body: Center(child: Text('Error: $error')),
+          ),
+        );
+      },
+      loading: () => Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: const CustomAppBar(
+          title: 'Favorites',
+          automaticallyImplyLeading: false,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: const CustomAppBar(
+          title: 'Favorites',
+          automaticallyImplyLeading: false,
+        ),
+        body: Center(child: Text('Error: $error')),
+      ),
+    );
+  }
+
+  Widget _buildFavoritesList(
+    BuildContext context,
+    WidgetRef ref,
+    List<Recipe> recipes,
+    List<String> favoriteIds,
+  ) {
+    final favoriteRecipes = recipes
         .where((recipe) => favoriteIds.contains(recipe.id))
         .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Favorites',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        elevation: 2,
+      appBar: const CustomAppBar(
+        title: 'Favorites',
+        automaticallyImplyLeading: false,
       ),
       body: favoriteRecipes.isEmpty
           ? Center(
@@ -147,10 +189,11 @@ class FavoritesScreen extends ConsumerWidget {
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.favorite, color: Colors.red),
-                        onPressed: () {
-                          ref
-                              .read(favoritesProvider.notifier)
+                        onPressed: () async {
+                          await ref
+                              .read(favoritesActionsProvider)
                               .removeFavorite(recipe.id);
+                          // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(

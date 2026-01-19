@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/recipe.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/custom_app_bar.dart';
 import '../../data/providers/recipe_provider.dart';
 import '../home/recipe_detail_screen.dart';
 import '../home/widgets/recipe_card.dart';
@@ -36,17 +37,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          'Search',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        elevation: 2,
+      appBar: const CustomAppBar(
+        title: 'Search',
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -139,7 +132,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _searchQuery.isEmpty
-                  ? _buildSuggestions(allRecipes)
+                  ? allRecipes.when(
+                      data: (recipes) => _buildSuggestions(recipes),
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      error: (error, stack) =>
+                          Center(child: Text('Error loading recipes: $error')),
+                    )
                   : searchResults.when(
                       data: (recipes) => _buildSearchResults(recipes),
                       loading: () => const Center(

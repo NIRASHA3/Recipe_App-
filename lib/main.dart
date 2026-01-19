@@ -1,19 +1,21 @@
+/// TasteFit - Main Application Entry Point
+///
+/// This file initializes the Flutter application, sets up Firebase,
+/// and configures the app theme and routing.
+///
+library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // This will be generated automatically
+import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/auth/get_started_screen.dart';
 
 void main() async {
-  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const ProviderScope(child: TasteFitApp()));
 }
 

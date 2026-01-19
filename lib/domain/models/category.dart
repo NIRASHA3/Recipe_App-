@@ -1,51 +1,81 @@
-import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Category {
   final String id;
   final String name;
-  final String icon; // Icon name or emoji
+  final String description;
+  final String imageUrl;
+  final int recipeCount;
   final bool isCustom;
+  final String? createdBy;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Category({
     String? id,
     required this.name,
-    required this.icon,
-    this.isCustom = false,
-  }) : id = id ?? const Uuid().v4();
+    required this.description,
+    required this.imageUrl,
+    required this.recipeCount,
+    required this.isCustom,
+    this.createdBy,
+    this.createdAt,
+    this.updatedAt,
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
-  factory Category.fromJson(Map<String, dynamic> json) {
+  factory Category.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
     return Category(
-      id: json['id'] as String?,
-      name: json['name'] as String,
-      icon: json['icon'] as String,
-      isCustom: json['isCustom'] as bool? ?? false,
+      id: doc.id,
+      name: data['name'] ?? '',
+      description: data['description'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      recipeCount: data['recipeCount'] ?? 0,
+      isCustom: data['isCustom'] ?? false,
+      createdBy: data['createdBy'],
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : null,
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'icon': icon, 'isCustom': isCustom};
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'description': description,
+      'imageUrl': imageUrl,
+      'recipeCount': recipeCount,
+      'isCustom': isCustom,
+      if (createdBy != null) 'createdBy': createdBy,
+      if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
+      if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
+    };
   }
 
-  Category copyWith({String? id, String? name, String? icon, bool? isCustom}) {
+  Category copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? imageUrl,
+    int? recipeCount,
+    bool? isCustom,
+    String? createdBy,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
     return Category(
       id: id ?? this.id,
       name: name ?? this.name,
-      icon: icon ?? this.icon,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      recipeCount: recipeCount ?? this.recipeCount,
       isCustom: isCustom ?? this.isCustom,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
-
-  @override
-  String toString() => name;
 }
-
-// Default categories
-final defaultCategories = [
-  Category(name: 'Breakfast', icon: '🍳'),
-  Category(name: 'Lunch', icon: '🍲'),
-  Category(name: 'Dinner', icon: '🍽️'),
-  Category(name: 'Desserts', icon: '🍰'),
-  Category(name: 'Bakery', icon: '🥐'),
-  Category(name: 'Snacks', icon: '🥜'),
-  Category(name: 'Drinks', icon: '🥤'),
-];

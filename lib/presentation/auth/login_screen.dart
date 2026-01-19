@@ -1,6 +1,13 @@
+/// Login Screen
+///
+/// Handles user authentication with email/password.
+/// Provides navigation to registration and password recovery.
+///
+library;
+
 import 'package:flutter/material.dart';
 import 'package:tastefit/presentation/auth/forgot_password_screen.dart';
-//import 'package:flutter/gestures.dart';  //For TapGestureRecognizer (if needed elsewhere)
+import '../../data/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/primary_button.dart';
@@ -16,6 +23,66 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool rememberMe = false;
+  bool _isLoading = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    // Validation
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
+
+    if (!_emailController.text.contains('@')) {
+      _showError('Please enter a valid email address');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.loginWithEmail(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      // Check if widget is still mounted
+      if (!mounted) return;
+
+      // Success - navigate to home
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const BottomNav()),
+      );
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,9 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: AppColors.card,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppColors.primary.withAlpha(
-                      (255 * 0.3).round(),
-                    ), // FIXED: Alpha
+                    color: AppColors.primary.withAlpha((255 * 0.3).round()),
                     width: 1,
                   ),
                   boxShadow: [
@@ -84,17 +149,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     /// Email Field
                     AppTextField(
                       hint: "Email",
+                      controller: _emailController,
                       prefixIcon: const Icon(
                         Icons.email_outlined,
                         color: AppColors.textLight,
-                      ), // Now supported
-                      fillColor: Colors.white, 
+                      ),
+                      fillColor: Colors.white,
+                      keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
 
                     /// Password Field
                     AppTextField(
                       hint: "Enter your password",
+                      controller: _passwordController,
                       isPassword: true,
                       prefixIcon: const Icon(
                         Icons.lock_outlined,
@@ -115,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           side: const BorderSide(
                             color: AppColors.primary,
                             width: 2,
-                          ), // FIXED: Static side
+                          ),
                           onChanged: (value) {
                             setState(() {
                               rememberMe = value ?? false;
@@ -158,14 +226,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     /// Login Button
                     PrimaryButton(
-                      text: "Login",
-                      onTap: () {
-                        // TODO: Auth logic
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BottomNav()),
-                        );
-                      },
+                      text: _isLoading ? "Logging in..." : "Login",
+                      onTap: _isLoading ? null : _login,
                     ),
                   ],
                 ),
