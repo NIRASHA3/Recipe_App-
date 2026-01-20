@@ -1,7 +1,7 @@
 // lib/data/repositories/category_repository.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tastefit/domain/models/category.dart';
+import 'package:tastefit_latest/domain/models/category.dart';
 
 class CategoryRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

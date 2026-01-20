@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tastefit/domain/models/recipe.dart';
+import 'package:tastefit_latest/domain/models/recipe.dart';
 
 class RecipeRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

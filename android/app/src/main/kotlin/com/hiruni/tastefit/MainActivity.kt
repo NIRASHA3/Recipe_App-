@@ -1,4 +1,4 @@
-package com.example.tastefit
+package com.hiruni.tastefit
 
 import io.flutter.embedding.android.FlutterActivity
 
