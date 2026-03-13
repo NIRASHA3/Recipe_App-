@@ -43,20 +43,18 @@ Integrated with **Firebase** for authentication, data storage, and analytics.
 
 Follow these steps to run TasteFit on your machine:
 
-1. **Clone the repository:**
-
 ```bash
+1. **Clone the repository:**
 git clone https://github.com/NIRASHA3/Recipe_App.git
 
 2. **Navigate to the project folder:**
-```bash
 cd tastefit_latest
+
 3. **Install dependencies using Flutter:**
-```bash
 flutter pub get
+
 4. **Configure Firebase:**
-```bash
-Make sure your firebase_options.dart is properly set up with your Firebase project
+Make sure your firebase_options.dart is properly set up with your Firebase project.
+
 5. **Run the app on an emulator or physical device:**
-```bash
 flutter run
