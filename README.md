@@ -48,11 +48,15 @@ Follow these steps to run TasteFit on your machine:
 ```bash
 git clone https://github.com/NIRASHA3/Recipe_App.git
 
-**2. Navigate to the project folder:**  
+2. **Navigate to the project folder:**
+```bash
 cd tastefit_latest
-**3.Install dependencies using Flutter:**
+3. **Install dependencies using Flutter:**
+```bash
 flutter pub get
-**4. Configure Firebase:**
+4. **Configure Firebase:**
+```bash
 Make sure your firebase_options.dart is properly set up with your Firebase project
-**5. Run the app on an emulator or physical device:**
+5. **Run the app on an emulator or physical device:**
+```bash
 flutter run
