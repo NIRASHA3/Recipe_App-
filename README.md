@@ -45,3 +45,19 @@ Integrated with **Firebase** for authentication, data storage, and analytics.
 
 ```bash
 git clone https://github.com/NIRASHA3/Recipe_App-
+
+2. Navigate to the project folder:
+
+cd tastefit
+
+3. Install dependencies using Flutter:
+
+flutter pub get
+
+4. Configure Firebase:
+
+Make sure your firebase_options.dart is set up with your Firebase project.
+
+5. Run the app on emulator or device:
+
+flutter run
